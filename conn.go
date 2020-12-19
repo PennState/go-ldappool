@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"gopkg.in/ldap.v2"
+	"github.com/go-ldap/ldap/v3"
 )
 
 // PoolConn implements Client to override the Close() method
@@ -13,7 +13,7 @@ type PoolConn struct {
 	Conn     ldap.Client
 	c        *channelPool
 	unusable bool
-	closeAt  []uint8
+	closeAt  []uint16
 }
 
 func (p *PoolConn) Start() {

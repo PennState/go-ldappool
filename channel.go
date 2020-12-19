@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"gopkg.in/ldap.v2"
+	"github.com/go-ldap/ldap/v3"
 )
 
 // channelPool implements the Pool interface based on buffered channels.
@@ -19,7 +19,7 @@ type channelPool struct {
 
 	// net.Conn generator
 	factory PoolFactory
-	closeAt []uint8
+	closeAt []uint16
 }
 
 // PoolFactory is a function to create new connections.
@@ -36,7 +36,7 @@ type PoolFactory func(string) (ldap.Client, error)
 // of the call is one of those passed, most likely you want to set this to something
 // like
 //   []uint8{ldap.LDAPResultTimeLimitExceeded, ldap.ErrorNetwork}
-func NewChannelPool(initialCap, maxCap int, name string, factory PoolFactory, closeAt []uint8) (Pool, error) {
+func NewChannelPool(initialCap, maxCap int, name string, factory PoolFactory, closeAt []uint16) (Pool, error) {
 	if initialCap < 0 || maxCap <= 0 || initialCap > maxCap {
 		return nil, errors.New("invalid capacity settings")
 	}
@@ -166,7 +166,7 @@ func (c *channelPool) Close() {
 
 func (c *channelPool) Len() int { return len(c.getConns()) }
 
-func (c *channelPool) wrapConn(conn ldap.Client, closeAt []uint8) *PoolConn {
+func (c *channelPool) wrapConn(conn ldap.Client, closeAt []uint16) *PoolConn {
 	p := &PoolConn{c: c, closeAt: closeAt}
 	p.Conn = conn
 	return p
