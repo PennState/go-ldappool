@@ -64,8 +64,6 @@ func (c Healthcheck) Check() ([]hc.Check, hc.Status) {
 		return []hc.Check{searchCheck, poolSizeCheck}, hc.Fail
 	}
 
-	fmt.Printf("results: %+v\n", res)
-
 	if len(res.Entries) != 1 {
 		searchCheck.Status = hc.Fail
 		searchCheck.Output = fmt.Sprintf("Search returned %d entries", len(res.Entries))
