@@ -58,6 +58,7 @@ func (c Healthcheck) Check() ([]hc.Check, hc.Status) {
 		Filter:     "(objectclass=*)",
 	})
 	if err != nil {
+		l.MarkUnusable()
 		searchCheck.Status = hc.Fail
 		searchCheck.Output = err.Error()
 
