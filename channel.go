@@ -11,7 +11,7 @@ import (
 // channelPool implements the Pool interface based on buffered channels.
 type channelPool struct {
 	// storage for our net.Conn connections
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	conns chan ldap.Client
 
 	name        string
@@ -70,9 +70,9 @@ func (c *channelPool) AliveChecks(on bool) {
 }
 
 func (c *channelPool) getConns() chan ldap.Client {
-	c.mu.Lock()
+	c.mu.RLock()
 	conns := c.conns
-	c.mu.Unlock()
+	c.mu.RUnlock()
 	return conns
 }
 

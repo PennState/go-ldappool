@@ -23,4 +23,7 @@ type Pool interface {
 
 	// Len returns the current number of connections of the pool.
 	Len() int
+
+	// AliveChecks enables a simple alive check prior to returning a connection from the pool with Get()
+	AliveChecks(on bool)
 }
