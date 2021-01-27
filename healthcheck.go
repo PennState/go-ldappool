@@ -9,11 +9,11 @@ import (
 
 // Healthcheck ...
 type Healthcheck struct {
-	Pool     Pool
-	SearchDN string // DN of LDAP entry to search for
+	Pool            Pool
+	SearchDN        string // DN of LDAP entry to search for
+	SearchTimeLimit int
+	Timeout         time.Duration
 }
-
-const searchTimeLimit = 10
 
 // Check runs a gitlab client healthcheck
 func (c Healthcheck) Check() ([]hc.Check, hc.Status) {
@@ -49,12 +49,13 @@ func (c Healthcheck) Check() ([]hc.Check, hc.Status) {
 	}
 	defer l.Close()
 
+	l.SetTimeout(c.Timeout)
 	res, err := l.Search(&ldap.SearchRequest{
 		BaseDN:     c.SearchDN,
 		Scope:      ldap.ScopeBaseObject,
 		Attributes: []string{},
 		SizeLimit:  1,
-		TimeLimit:  searchTimeLimit,
+		TimeLimit:  c.SearchTimeLimit,
 		Filter:     "(objectclass=*)",
 	})
 	if err != nil {
