@@ -96,7 +96,7 @@ func (c *channelPool) Get() (*PoolConn, error) {
 			return c.wrapConn(conn, c.closeAt), nil
 		}
 
-		log.Printf("connection dead\n")
+		log.Printf("ldappool: connection dead\n")
 		conn.Close()
 		return c.NewConn()
 	default:
@@ -121,7 +121,7 @@ func (c *channelPool) NewConn() (*PoolConn, error) {
 // conn is simply closed. A nil conn will be rejected.
 func (c *channelPool) put(conn ldap.Client) {
 	if conn == nil {
-		log.Printf("connection is nil. rejecting")
+		log.Printf("ldappool: connection is nil. rejecting\n")
 		return
 	}
 

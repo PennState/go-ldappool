@@ -32,7 +32,7 @@ func (p *PoolConn) Close() {
 	defer p.mu.RUnlock()
 
 	if p.unusable {
-		log.Printf("Closing unusable connection")
+		log.Printf("ldappool: closing unusable connection")
 		if p.Conn != nil {
 			p.Conn.Close()
 		}
