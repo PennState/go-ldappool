@@ -2,10 +2,10 @@ package ldappool
 
 import (
 	"crypto/tls"
-	"log"
-	"time"
-
 	"github.com/go-ldap/ldap/v3"
+	"log"
+	"sync"
+	"time"
 )
 
 // PoolConn implements Client to override the Close() method
@@ -14,6 +14,7 @@ type PoolConn struct {
 	c        *channelPool
 	unusable bool
 	closeAt  []uint16
+	mu       sync.RWMutex
 }
 
 func (p *PoolConn) Start() {
@@ -25,8 +26,11 @@ func (p *PoolConn) StartTLS(config *tls.Config) error {
 	return p.Conn.StartTLS(config)
 }
 
-// Close() puts the given connects back to the pool instead of closing it.
+// Close puts the given connects back to the pool instead of closing it.
 func (p *PoolConn) Close() {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
 	if p.unusable {
 		log.Printf("Closing unusable connection")
 		if p.Conn != nil {
@@ -38,17 +42,23 @@ func (p *PoolConn) Close() {
 }
 
 func (p *PoolConn) SimpleBind(simpleBindRequest *ldap.SimpleBindRequest) (*ldap.SimpleBindResult, error) {
-	return p.Conn.SimpleBind(simpleBindRequest)
+	res, err := p.Conn.SimpleBind(simpleBindRequest)
+	p.autoClose(err)
+	return res, err
 }
 
 func (p *PoolConn) Bind(username, password string) error {
-	return p.Conn.Bind(username, password)
+	err := p.Conn.Bind(username, password)
+	p.autoClose(err)
+	return err
 }
 
-// MarkUnusable() marks the connection not usable any more, to let the pool close it
+// MarkUnusable marks the connection not usable any more, to let the pool close it
 // instead of returning it to pool.
 func (p *PoolConn) MarkUnusable() {
+	p.mu.Lock()
 	p.unusable = true
+	p.mu.Unlock()
 }
 
 func (p *PoolConn) autoClose(err error) {
@@ -65,28 +75,42 @@ func (p *PoolConn) SetTimeout(t time.Duration) {
 }
 
 func (p *PoolConn) Add(addRequest *ldap.AddRequest) error {
-	return p.Conn.Add(addRequest)
+	err := p.Conn.Add(addRequest)
+	p.autoClose(err)
+	return err
 }
 
 func (p *PoolConn) Del(delRequest *ldap.DelRequest) error {
-	return p.Conn.Del(delRequest)
+	err := p.Conn.Del(delRequest)
+	p.autoClose(err)
+	return err
 }
 
 func (p *PoolConn) Modify(modifyRequest *ldap.ModifyRequest) error {
-	return p.Conn.Modify(modifyRequest)
+	err := p.Conn.Modify(modifyRequest)
+	p.autoClose(err)
+	return err
 }
 
 func (p *PoolConn) Compare(dn, attribute, value string) (bool, error) {
-	return p.Conn.Compare(dn, attribute, value)
+	res, err := p.Conn.Compare(dn, attribute, value)
+	p.autoClose(err)
+	return res, err
 }
 
 func (p *PoolConn) PasswordModify(passwordModifyRequest *ldap.PasswordModifyRequest) (*ldap.PasswordModifyResult, error) {
-	return p.Conn.PasswordModify(passwordModifyRequest)
+	res, err := p.Conn.PasswordModify(passwordModifyRequest)
+	p.autoClose(err)
+	return res, err
 }
 
 func (p *PoolConn) Search(searchRequest *ldap.SearchRequest) (*ldap.SearchResult, error) {
-	return p.Conn.Search(searchRequest)
+	res, err := p.Conn.Search(searchRequest)
+	p.autoClose(err)
+	return res, err
 }
 func (p *PoolConn) SearchWithPaging(searchRequest *ldap.SearchRequest, pagingSize uint32) (*ldap.SearchResult, error) {
-	return p.Conn.SearchWithPaging(searchRequest, pagingSize)
+	res, err := p.Conn.SearchWithPaging(searchRequest, pagingSize)
+	p.autoClose(err)
+	return res, err
 }
